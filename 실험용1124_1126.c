@@ -1,0 +1,389 @@
+﻿#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <math.h>
+#include <time.h>
+#include <stdlib.h>
+
+//======================================
+typedef struct ListWork {
+	int num; //번호(과제번호)
+	char Subject[30]; //과목명
+	char workname[50];//과제명
+	int year; //년도(추가)
+	int month; //달 (추가)
+	int day; //마감일 날
+	int hour; //마감일 시간
+	int minu; //마감일 분
+	char send[6]; //제출/미제출
+	struct ListWork* next; //다음 노드 이어붙이기위해 필요한듯
+}listwork;
+
+typedef struct ListWork listwork;
+
+typedef struct LinkedList { //사작점head
+	listwork* head;
+	int length;//사실이건잘모르겠다
+}linkedlist;
+
+typedef struct LinkedList linkedlist;
+
+//=======================================
+
+/*struct tm
+{
+	int tm_year;
+	int tm_mon;
+	int tm_day;
+	int tm_hour;
+	int tm_minu;
+};
+*/
+//=========================================
+/*void insertFirst(linkedlist* L, int num, char* Sub, char) //리스트의 첫번째 노드로 삽입
+{
+	listNode* newNode;
+	newNode = (listNode*)malloc(sizeof(listNode));//동적 생성        =(listNode*)calloc(?,sizeof(listNode));
+	newNode->no = a;//상품번호       (*newNode).no에  a(번호)를 넣겠다
+	strcpy(newNode->fName, b);//과일이름             b(과일이름)를 복사해서 (*newNode).fName에 복사
+	newNode->price = c;//가격        (*newNode).price에  c(가격)을 넣겠다
+	newNode->link = L->head; //뒤로 연결. 자기참조구조체? ** link에 원래 head가 가리키던 주소주기****
+	L->head = newNode; //헤드가 새 노드 링크가리키기
+	L->length++;//리스트길이 증가~
+}*/
+//==================================================
+int MonthtoDay(int wyear, int wmonth)// listwork year, listwork month //반환하므로 int 쓰기...
+{
+	if (wmonth == 2)//윤년먼저. 윤년일시 +29
+	{
+		if ((wyear % 4) == 0 && (wyear % 100) != 0 || (wyear % 400) == 0)
+		{
+			return 29;
+		}
+		else
+		{
+			return 28;
+		}
+		
+		
+	}
+	if (wmonth == 1 || wmonth == 3 || wmonth == 5 || wmonth == 7 || wmonth == 8 || wmonth == 10 || wmonth == 12) // 31일인 달 (+31)
+	{
+		return 31;
+	}
+	if (wmonth == 4 || wmonth == 6 || wmonth == 9 || wmonth == 11) //30일인 달 (+30)
+	{
+		return 30;
+	}
+	return 0;
+}
+void LastTime(listwork w)//남은시간 보여주기...현재시간 -  날. 시 분 보여주면 되겠지?
+{
+	//현재 시간 가져오기 (current_tm에 저장)
+	time_t current_tm = time(NULL);
+	struct tm tm = *localtime(&current_tm);
+	//printf("%d, %5s, %5s, %5d월 %5d일, %5d시, %3d분, %5s", w.num, w.Subject, w.workname, w.month - tm.tm_mon + 1, w.day - tm.tm_mday, w.hour - tm.tm_hour, w.minu - tm.tm_min, w.send);//모두 출력
+	printf("%d, %5s, %5s", w.num, w.Subject, w.workname);
+
+	int minmin = w.minu; //본래 값 바꿨다가 뭔일 날까봐 만들어놓음
+	int houror = w.hour;
+	int monthth = w.month;
+	int dayday = w.day;
+	int yearar = w.year;
+
+	
+	int lastmin = minmin - tm.tm_min;
+	if (lastmin < 0) //분 계산
+	{
+		houror = houror - 1;
+		lastmin = lastmin + 60;
+	}
+
+	int lasthour = houror - tm.tm_hour;
+	if (lasthour < 0)
+	{
+		dayday = dayday - 1;
+		lasthour = lasthour + 24;
+	}
+
+	int lastday = dayday - tm.tm_mday;
+	if (lastday < 0)
+	{
+		monthth = monthth - 1;
+		if (monthth == 0) //0월은 없다!
+		{
+			monthth = 12; //12월로 바꾸기
+			yearar = yearar - 1; //년도 -1
+		}
+		lastday = lastday + MonthtoDay(yearar, monthth); //실수ㅜㅇ
+			//여기 함수 하나 다시만들어야할듯. 월에 따라 그 뭐냐 날수도 다르고 2월은 특히 짧으니깐
+	}
+
+	int lastmonth = monthth - (tm.tm_mon+1);// tm.tm.mon은 0~11이라함... 원하는값 얻을라면 +1
+	if (lastmonth < 0)
+	{
+		yearar = yearar - 1;
+		lastmonth = lastmonth + 12;
+	}
+
+	int lastyear = yearar - (tm.tm_year+1900); //년도는 빼올 수 있는 곳이 없으니 이대로 마무리... tm.tm_year은 1900년대 이후로 지난 시간이라 1900을 더해줘야 한다고 함...
+
+	
+	if (lastyear < 0) //얘까지 빼면 안돌아가고
+	{
+		printf(" -> 기한이 만료된 과제입니다!\n\n");
+		return;
+	}
+	/*if (lastyear == 0 && lastmonth < 0)
+	{
+		printf(" -> 기한이 만료된 과제입니다!\n\n");
+		return;
+	}
+	if (lastyear == 0 && lastmonth == 0 && lastday < 0)
+	{
+		printf(" -> 기한이 만료된 과제입니다!\n\n");
+		return;
+	}
+	if (lastyear == 0 && lastmonth == 0 && lastday == 0 && lasthour < 0)
+	{
+		printf(" -> 기한이 만료된 과제입니다!\n\n");
+		return;
+	}*///이건 또 뺴면 돌아가네?? 뭐지
+	if (lastyear == 0 && lastmonth == 0 && lastday == 0 && lasthour == 0 && lastmin < 0)
+	{
+		printf(" -> 기한이 만료된 과제입니다!\n\n");
+		return;
+	}
+	printf("\n\n");
+	printf("남은 시간: %d년 %d개월 %d일 %d시간 %d분\n", lastyear, lastmonth, lastday, lasthour, lastmin);
+	printf("\n\n");
+}
+
+//=======================================================================================================================================================
+
+void displayList(linkedlist* L) { //리스트 안 모든 항목 표시하기
+	listwork* w;
+	w = L->head; //헤더가 가리키는거(처음)로 둠
+	while (w != NULL) {//끝까지 안 갔으면~
+		printf("%d, %5s, %5s, %5d월 %5d일, %5d시, %3d분, %5s", w->num, w->Subject, w->workname, w->month, w->day, w->hour, w->minu, w->send);//모두 출력
+		w = w->next; //다음노드
+		if (w != NULL)
+		{
+			printf(" \n--> ");
+		}
+	}
+	printf("\n");
+
+}
+//===================
+
+void insertList(linkedlist* L, listwork w)
+{
+	listwork* newwork = (listwork*)malloc(sizeof(listwork)); //공간 할당
+	*newwork = w; //newwork는 listwork 구조체를 복사받음
+	newwork->next = NULL; //처음 가리키는거주소 null
+
+	if (L->head == NULL) //처음 가리키는게 NULL이면(가리키는게 없으면)
+	{
+		L->head = newwork; //newwork를 가리킴
+	}
+	else //null이 아니면(가리키는게 있으면)
+	{
+		listwork* temp = L->head; //빈칸에 head넣기
+		while (temp->next != NULL)
+		{
+			temp = temp->next; //NULL찾을때까지 뒤로 쭉감
+		}
+		temp->next = newwork; //새로 연결
+	}
+
+	L->length++;
+}
+
+void AddWork(linkedlist* L) //과제 추가 기능! scanf 이용
+{
+	listwork w;
+
+	printf("과제 번호: "); //근데 이걸 써야하나? 자동으로 입력되게 할 수는 없나?
+	scanf("%d", &w.num); //일단 과제 번호 입력
+
+	printf("과목명: ");
+	scanf("%s", w.Subject);
+
+	printf("과제명: ");
+	scanf("%s", w.workname);
+
+	printf("마감 년도: "); //년도 추가 입력
+	scanf("%d", &w.year);
+
+	printf("마감 월: "); //월 추가 입력
+	scanf("%d", &w.month);
+
+	printf("마감 날짜(일): ");
+	scanf("%d", &w.day);
+
+	printf("마감 시간(시): ");
+	scanf("%d", &w.hour);
+
+	printf("마감 분: "); //좀 더 편하게 쓸 수 있는 방법이 없을까
+	scanf("%d", &w.minu);
+
+	printf("제출 여부: ");
+	scanf("%s", w.send);
+
+	w.next = NULL; //새 노드가 리스트의 끝이라는 뜻.
+	insertList(L, w); //inserList 불러옴
+
+	printf("\n");
+	printf("과제가 추가되었습니다!\n");
+}
+//=======================================
+
+void DeleteWork(linkedlist* L)
+{
+	if (L->head == NULL) //리스트가 비어있다면
+	{
+		printf("삭제할 과제가 존재하지 않습니다.\n");
+		return;
+	}
+
+	int want;
+
+	printf("삭제할 과제 번호를 입력하세요: ");//번호? 과제 이름? 과목명?
+	scanf("%d", &want);
+
+	listwork* pre = NULL; //지우려는 거의 앞을 가리키는 pre(앞 노드)
+	listwork* hun = L->head; //현재
+	//순서???
+
+
+
+	//pre = L->head;
+	//hun = NULL;
+
+	while (hun != NULL && hun->num != want) //NULL이 아닌데, 삭제하려던 번호가 아니면
+	{
+		pre = hun;//현재값을 pre에 넘겨주기.
+		hun = hun->next; //다음 넘어가기
+	}
+
+	if (hun == NULL)//NULL이면(비어있으면)
+	{
+		printf("과제 번호 %d를 찾을 수 없습니다.\n", want);
+		return;
+	}
+
+	//어떻게 해야 찾을 수 있지?
+	//printf("과제 %d번을 삭제하였습니다.\n", want);
+		//return 0;
+
+
+	if (pre == NULL)//삭제하려는게 헤드였으면
+	{
+		L->head = hun->next;  //현재 다음거...
+	}
+	else//헤드가 아니었으면
+	{
+		pre->next = hun->next; //현재의 다음걸 pre의 다음으로
+	}
+
+	free(hun);
+	L->length--; //빠졌으니 길이 줄이기
+	printf("과제 %d번을 삭제하였습니다!\n", want);
+
+}
+
+//=======================================
+int main()
+{
+
+	linkedlist* L = (linkedlist*)malloc(sizeof(linkedlist)); //공간 할당
+	//listwork* w;
+	listwork w = { 0 };
+	L->head = NULL;
+	L->length = 0;//기본 0
+
+	int choice;
+	//int first;
+	//int second;
+	int run = 1;//계속 선택 진행이 가능하도록 함.
+
+	printf("현재 과제 목록\n");
+	//리스트 쫙 보여주기
+	while (run)
+	{
+		displayList(L);
+		//AddWork(L, 1, "프실", "기말", 2025, 12, 2, 14, 00, "아니오");//번호과목명과제이름년월일시간분
+
+		printf("(1) 마감까지 남은 시간 보기\n");
+		printf("(2) 알림 시간대 설정\n");
+		printf("(3) 과제 추가\n");
+		printf("(4) 과제 삭제\n");
+		printf("(5) 과제 수정\n");
+		printf("(6) 과제 검색\n");
+		printf("(7) 기간 지난 과제 일괄삭제\n");
+		printf("(0) 종료\n");
+
+		printf("선택: ");
+		scanf("%d", &choice);
+
+		switch (choice)//어디서부터 꼬인거야~
+		{
+		case 1: //마감까지 남은 시간 보기
+		{
+			listwork* myworklist = L->head;
+			if (myworklist == NULL) //과제있니
+			{
+				printf("과제가 존재하지 않습니다.\n");//없으면 출력
+			}
+			else//있으면
+			{
+				while (myworklist != NULL)//끝까지 다
+				{
+					LastTime(*myworklist);//시간출력
+					myworklist = myworklist->next; //다음이동하면서 계속 출력
+				}
+			}
+			//time_t timer = time(NULL);//time.h, timer...   /timer을 struct tm 값으로 변환
+			//struct tm tm = *localtime(&timer);//time.h, tm...   time_t와 localtime은 둘다 time.h라이브러리의 함수
+			//LastTime(w);
+			break;
+		}
+		case 2: //알림 시간대 설정
+		{
+			break;
+		}
+		case 3: //과제 추가
+		{
+			//일단 만들어두기
+			//위로옮김
+			AddWork(L);
+			break;
+		}
+		case 4: //과제 삭제
+		{
+			DeleteWork(L);
+			break;
+		}
+		case 5: //과제 수정
+		{
+			break;
+		}
+		case 6: //과제 검색
+		{
+			break;
+		}
+		case 7: //기간 지난 과제 일괄 살제
+		{
+			break;
+		}
+		case 0: //종료
+		{
+			printf("프로그램을 종료합니다.\n"); //여기다가 그 SDL써도 되려나??
+			run = 0;
+			break;
+		}
+		}//잠만... 알림기능 어디감?
+	}
+	free(L);//... 필요?
+	return 0;
+}
